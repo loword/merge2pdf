@@ -1,0 +1,147 @@
+==============Page 1====================
+- - - - - Dictionary - - - - - -
+(/Type=/Page, /MediaBox=[0, 0, 420, 595], /Resources=Dictionary, /Contents=Stream, /Parent=Dictionary of type: /Pages)
+  Subdictionary /Resources = (/XObject=Dictionary)
+    Subdictionary /XObject = (/img0=Stream of type: /XObject)
+  Subdictionary /Parent = (/Type=/Pages, /Count=7, /Kids=[1 0 R, 5 0 R, 6 0 R, 8 0 R, 11 0 R, 14 0 R, 17 0 R])
+- - - - - XObject Summary - - - - - -
+------ /img0 - subtype = /Image, length = 1979 bytes, class = com.itextpdf.text.pdf.PRStream ------
+(/Type=/XObject, /Subtype=/Image, /Width=420, /Height=595, /Length=1979, /ColorSpace=/DeviceRGB, /BitsPerComponent=8, /Filter=/FlateDecode)
+- - - - - Content Stream - - - - - -
+q
+q 420 0 0 595 0 0 cm /img0 Do Q
+Q
+q
+BT
+36 559 Td
+ET
+Q
+- - - - - Text Extraction - - - - - -
+No text found on page 1
+
+==============Page 2====================
+- - - - - Dictionary - - - - - -
+(/Type=/Page, /MediaBox=[0, 0, 420, 595], /Resources=Dictionary, /Contents=Stream, /Parent=Dictionary of type: /Pages)
+  Subdictionary /Resources = (/XObject=Dictionary)
+    Subdictionary /XObject = (/img0=Stream of type: /XObject)
+  Subdictionary /Parent = (/Type=/Pages, /Count=7, /Kids=[1 0 R, 5 0 R, 6 0 R, 8 0 R, 11 0 R, 14 0 R, 17 0 R])
+- - - - - XObject Summary - - - - - -
+------ /img0 - subtype = /Image, length = 1979 bytes, class = com.itextpdf.text.pdf.PRStream ------
+(/Type=/XObject, /Subtype=/Image, /Width=420, /Height=595, /Length=1979, /ColorSpace=/DeviceRGB, /BitsPerComponent=8, /Filter=/FlateDecode)
+- - - - - Content Stream - - - - - -
+q
+q 420 0 0 595 0 0 cm /img0 Do Q
+Q
+q
+BT
+36 559 Td
+ET
+Q
+- - - - - Text Extraction - - - - - -
+No text found on page 2
+
+==============Page 3====================
+- - - - - Dictionary - - - - - -
+(/Type=/Page, /MediaBox=[0, 0, 210, 297.5], /Resources=Dictionary, /Contents=Stream, /Parent=Dictionary of type: /Pages)
+  Subdictionary /Resources = (/XObject=Dictionary)
+    Subdictionary /XObject = (/img1=Stream of type: /XObject)
+  Subdictionary /Parent = (/Type=/Pages, /Count=7, /Kids=[1 0 R, 5 0 R, 6 0 R, 8 0 R, 11 0 R, 14 0 R, 17 0 R])
+- - - - - XObject Summary - - - - - -
+------ /img1 - subtype = /Image, length = 1979 bytes, class = com.itextpdf.text.pdf.PRStream ------
+(/Type=/XObject, /Subtype=/Image, /Width=420, /Height=595, /Length=1979, /ColorSpace=/DeviceRGB, /BitsPerComponent=8, /Filter=/FlateDecode)
+- - - - - Content Stream - - - - - -
+q
+q 210 0 0 297.5 0 0 cm /img1 Do Q
+Q
+q
+BT
+36 261.5 Td
+ET
+Q
+- - - - - Text Extraction - - - - - -
+No text found on page 3
+
+==============Page 4====================
+- - - - - Dictionary - - - - - -
+(/Type=/Page, /MediaBox=[0, 0, 410, 10], /Resources=Dictionary, /Contents=Stream, /Parent=Dictionary of type: /Pages)
+  Subdictionary /Resources = (/XObject=Dictionary)
+    Subdictionary /XObject = (/img0=Stream of type: /XObject)
+  Subdictionary /Parent = (/Type=/Pages, /Count=7, /Kids=[1 0 R, 5 0 R, 6 0 R, 8 0 R, 11 0 R, 14 0 R, 17 0 R])
+- - - - - XObject Summary - - - - - -
+------ /img0 - subtype = /Image, length = 75 bytes, class = com.itextpdf.text.pdf.PRStream ------
+(/Type=/XObject, /Subtype=/Image, /Width=410, /Height=10, /Length=75, /ColorSpace=/DeviceRGB, /BitsPerComponent=8, /Filter=/FlateDecode)
+- - - - - Content Stream - - - - - -
+q
+q 410 0 0 10 0 0 cm /img0 Do Q
+Q
+q
+BT
+36 -26 Td
+ET
+Q
+- - - - - Text Extraction - - - - - -
+No text found on page 4
+
+==============Page 5====================
+- - - - - Dictionary - - - - - -
+(/Type=/Page, /MediaBox=[0, 0, 10, 605], /Resources=Dictionary, /Contents=Stream, /Parent=Dictionary of type: /Pages)
+  Subdictionary /Resources = (/XObject=Dictionary)
+    Subdictionary /XObject = (/img0=Stream of type: /XObject)
+  Subdictionary /Parent = (/Type=/Pages, /Count=7, /Kids=[1 0 R, 5 0 R, 6 0 R, 8 0 R, 11 0 R, 14 0 R, 17 0 R])
+- - - - - XObject Summary - - - - - -
+------ /img0 - subtype = /Image, length = 85 bytes, class = com.itextpdf.text.pdf.PRStream ------
+(/Type=/XObject, /Subtype=/Image, /Width=10, /Height=605, /Length=85, /ColorSpace=/DeviceRGB, /BitsPerComponent=8, /Filter=/FlateDecode)
+- - - - - Content Stream - - - - - -
+q
+q 10 0 0 605 0 0 cm /img0 Do Q
+Q
+q
+BT
+36 569 Td
+ET
+Q
+- - - - - Text Extraction - - - - - -
+No text found on page 5
+
+==============Page 6====================
+- - - - - Dictionary - - - - - -
+(/Type=/Page, /MediaBox=[0, 0, 595, 10], /Resources=Dictionary, /Contents=Stream, /Parent=Dictionary of type: /Pages)
+  Subdictionary /Resources = (/XObject=Dictionary)
+    Subdictionary /XObject = (/img0=Stream of type: /XObject)
+  Subdictionary /Parent = (/Type=/Pages, /Count=7, /Kids=[1 0 R, 5 0 R, 6 0 R, 8 0 R, 11 0 R, 14 0 R, 17 0 R])
+- - - - - XObject Summary - - - - - -
+------ /img0 - subtype = /Image, length = 81 bytes, class = com.itextpdf.text.pdf.PRStream ------
+(/Type=/XObject, /Subtype=/Image, /Width=595, /Height=10, /Length=81, /ColorSpace=/DeviceRGB, /BitsPerComponent=8, /Filter=/FlateDecode)
+- - - - - Content Stream - - - - - -
+q
+q 595 0 0 10 0 0 cm /img0 Do Q
+Q
+q
+BT
+36 -26 Td
+ET
+Q
+- - - - - Text Extraction - - - - - -
+No text found on page 6
+
+==============Page 7====================
+- - - - - Dictionary - - - - - -
+(/Type=/Page, /MediaBox=[0, 0, 1190, 20], /Resources=Dictionary, /Contents=Stream, /Parent=Dictionary of type: /Pages)
+  Subdictionary /Resources = (/XObject=Dictionary)
+    Subdictionary /XObject = (/img0=Stream of type: /XObject)
+  Subdictionary /Parent = (/Type=/Pages, /Count=7, /Kids=[1 0 R, 5 0 R, 6 0 R, 8 0 R, 11 0 R, 14 0 R, 17 0 R])
+- - - - - XObject Summary - - - - - -
+------ /img0 - subtype = /Image, length = 161 bytes, class = com.itextpdf.text.pdf.PRStream ------
+(/Type=/XObject, /Subtype=/Image, /Width=1190, /Height=20, /Length=161, /ColorSpace=/DeviceRGB, /BitsPerComponent=8, /Filter=/FlateDecode)
+- - - - - Content Stream - - - - - -
+q
+q 1190 0 0 20 0 0 cm /img0 Do Q
+Q
+q
+BT
+36 -16 Td
+ET
+Q
+- - - - - Text Extraction - - - - - -
+No text found on page 7
+
