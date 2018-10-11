@@ -108,7 +108,7 @@ public class MergeToPdf {
 					if (scaleToPage != null || scaleToDpi) {
 						// The image should be scaled according to DPI (if available) before it is placed to the page.
 						// See also https://stackoverflow.com/a/8245450/267197
-						if (image.getDpiX() > 1 && image.getDpiY() > 1
+						if (image.getDpiX() > 0 && image.getDpiY() > 0
 						            && (image.getDpiX() != PDF_DPI || image.getDpiY() != PDF_DPI)) {
 							image.scalePercent(100f * PDF_DPI / image.getDpiX(), 100f * PDF_DPI / image.getDpiY());
 							logger.debug(String.format("Scaled image as to %d DPI (%.2f, %.2f) -> (%.2f, %.2f)",

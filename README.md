@@ -2,8 +2,6 @@
 
 [![Build Status](https://travis-ci.org/dmak/merge2pdf.svg)](https://travis-ci.org/dmak/merge2pdf)
 [![Coverage Status](https://coveralls.io/repos/github/dmak/merge2pdf/badge.svg?branch=master)](https://coveralls.io/github/dmak/merge2pdf?branch=master)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.merge2pdf/merge2pdf/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.merge2pdf/merge2pdf)
-[![Javadoc](http://javadoc.io/badge/com.github.merge2pdf/merge2pdf.svg)](http://www.javadoc.io/doc/com.github.merge2pdf/merge2pdf)
 
 If you like this utility, please give in a star in GutHub! Report the issues to [bugtracker](https://github.com/dmak/merge2pdf/issues/).
 
@@ -45,7 +43,7 @@ Further, [`pdftk`](http://www.pdflabs.com/tools/pdftk-the-pdf-toolkit/ ) and [`q
 </tr>
 <tr>
 	<td><tt>-An</tt>, e.g. <tt>-A3</tt>, <tt>-A4</tt>, <tt>-A5</tt>, ...</td>
-	<td>Scale the image down to fit the given page size (A3, A4, ...). Also auto-rotation is applied, i.e. if image width is bigger than height, page orientation is set to landscape.</td>
+	<td>Scale the image down to fit the given page size (A3, A4, ...). If this options is provided, then `-dpi` is implicitly enabled. Also auto-rotation is applied, i.e. if image width is bigger than height and the image does not fit the portrait-oriented page, page orientation is set to landscape and then the image is scaled down (if necessary).</td>
 </tr>
 </table>
 

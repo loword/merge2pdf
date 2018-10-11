@@ -6,14 +6,10 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.ref.WeakReference;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -66,7 +62,7 @@ public class MergeToPdfTest {
 			OUTPUT_DIR.mkdirs();
 		}
 
-		//recreateImages();
+		//recreateTestImages();
 
 		List<String> args = new ArrayList<String>();
 
@@ -102,7 +98,6 @@ public class MergeToPdfTest {
 
 	private static void runTest(String[] args, String testResourceSuffix) {
 		try {
-			//releaseDirectByteBuffer();
 			File pdfFile = new File(OUTPUT_DIR, "out_" + testResourceSuffix + ".pdf");
 
 			MergeToPdf.main(ArrayUtils.add(args, pdfFile.getPath()));
@@ -119,38 +114,11 @@ public class MergeToPdfTest {
 	}
 
 	/**
-	 * Even though the stream which is associated with OUTPUT_PDF_NAME is closed, "java.io.FileNotFoundException:
-	 * out.pdf (The requested operation cannot be per formed on a file with a user-mapped section open)" is thrown.
-	 * 
-	 * @see <a href="https://stackoverflow.com/a/45850877/267197">How to unmap a file from memory mapped using
-	 *      FileChannel in java</a>
-	 */
-	private static void releaseDirectByteBuffer() throws IOException {
-		FileInputStream os = new FileInputStream(new File(OUTPUT_DIR, "out.pdf"));
-		MappedByteBuffer buffer = os.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, 1);
-		//((sun.nio.ch.DirectBuffer) buffer).cleaner().clean();
-		os.close();
-
-		WeakReference<MappedByteBuffer> bufferWeakRef = new WeakReference<MappedByteBuffer>(buffer);
-		buffer = null;
-
-		final long startTime = System.currentTimeMillis();
-		while (null != bufferWeakRef.get()) {
-			if (System.currentTimeMillis() - startTime > 1000) {
-				// Give up and home for the best:
-				return;
-			}
-			System.gc();
-			Thread.yield();
-		}
-	}
-
-	/**
 	 * This method will re-create all images in test resources. After this function is run, the resulting image
-	 * {@code 1_no_dpi.tiff} should be wrapped into {@code 1_no_dpi.pdf}, and images {@code 2_dpi_standard.tiff} and
-	 * {@code 3_dpi.tiff} should be put into multi-page TIFF.
+	 * {@code 1_no_dpi.tiff} should be wrapped into {@code 1_no_dpi.pdf}, and images {@code 6_fits_rotate.tiff} and
+	 * {@code 7_fits_rotate_scale.tiff} should be put into one multi-page TIFF {@code 6-7_fits_rotate-scale.tif}.
 	 */
-	private static void recreateImages() {
+	private static void recreateTestImages() {
 		createImage(IMAGE_WIDTH, IMAGE_HEIGHT, "1_no_dpi", -1);
 		createImage(IMAGE_WIDTH, IMAGE_HEIGHT, "2_dpi_standard", MergeToPdf.PDF_DPI);
 		createImage(IMAGE_WIDTH, IMAGE_HEIGHT, "3_dpi", MergeToPdf.PDF_DPI * 2);
@@ -211,6 +179,8 @@ public class MergeToPdfTest {
 	 * 
 	 * @see <a href="https://stackoverflow.com/questions/321736/how-to-set-dpi-information-in-an-image">How to set DPI
 	 *      information in an image</a>
+	 * @see <a href=
+	 *      "https://github.com/jai-imageio/jai-imageio-core/blob/0feba94520cc9cb59c58167f3b13dd712f100bbc/src/main/java/com/github/jaiimageio/impl/plugins/tiff/TIFFImageWriter.java#L1152"><tt>TIFFImageWriter:1152-1236</tt></a>
 	 */
 	private static IIOMetadata createMetadataWithDpi(ImageWriter writer, ImageWriteParam writeParam, int resolution)
 	            throws IIOInvalidTreeException {
@@ -220,16 +190,18 @@ public class MergeToPdfTest {
 
 		if (resolution > 0) {
 			// Used to create/resolve TIFF tag by its ID:
-			BaselineTIFFTagSet base = BaselineTIFFTagSet.getInstance();
+			BaselineTIFFTagSet tagSet = BaselineTIFFTagSet.getInstance();
+
+			// First value is a divisible and second is divider, so resolution is calculated as "resolution / 1" by reader:
+			long[][] fieldValue = new long[][] { { resolution, 1 } };
 
 			// Create necessary TIFF fields and set them to TIFF directory:
-			TIFFField fieldXRes = new TIFFField(base.getTag(BaselineTIFFTagSet.TAG_X_RESOLUTION), TIFFTag.TIFF_RATIONAL,
-			            1, new long[][] { { resolution, 1 } });
-			TIFFField fieldYRes = new TIFFField(base.getTag(BaselineTIFFTagSet.TAG_Y_RESOLUTION), TIFFTag.TIFF_RATIONAL,
-			            1, new long[][] { { resolution, 1 } });
-
-			dir.addTIFFField(fieldXRes);
-			dir.addTIFFField(fieldYRes);
+			dir.addTIFFField(new TIFFField(tagSet.getTag(BaselineTIFFTagSet.TAG_X_RESOLUTION), TIFFTag.TIFF_RATIONAL, 1,
+			            fieldValue));
+			dir.addTIFFField(new TIFFField(tagSet.getTag(BaselineTIFFTagSet.TAG_Y_RESOLUTION), TIFFTag.TIFF_RATIONAL, 1,
+			            fieldValue));
+			dir.addTIFFField(new TIFFField(tagSet.getTag(BaselineTIFFTagSet.TAG_RESOLUTION_UNIT),
+			            BaselineTIFFTagSet.RESOLUTION_UNIT_INCH));
 		}
 
 		// Convert TIFF directory to IOImage metadata:

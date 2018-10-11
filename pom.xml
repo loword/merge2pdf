@@ -43,6 +43,24 @@
 	</properties>
 
 	<profiles>
+		<profile>
+			<id>stage-release</id>
+
+			<build>
+				<pluginManagement>
+					<plugins>
+						<plugin>
+							<artifactId>maven-release-plugin</artifactId>
+							<version>2.5.3</version>
+							<configuration>
+								<tagNameFormat>release-@{project.version}</tagNameFormat>
+							</configuration>
+						</plugin>
+					</plugins>
+				</pluginManagement>
+			</build>
+		</profile>
+
 		<!-- This profile publishes code coverage report on https://coveralls.io. -->
 		<profile>
 			<id>travis</id>
