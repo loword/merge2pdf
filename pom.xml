@@ -54,6 +54,8 @@
 							<version>2.5.3</version>
 							<configuration>
 								<tagNameFormat>release-@{project.version}</tagNameFormat>
+								<!-- By default goal is "deploy" but since there is no <distributionManagement> in this POM, it will fail: -->
+								<goals>install</goals>
 							</configuration>
 						</plugin>
 					</plugins>
