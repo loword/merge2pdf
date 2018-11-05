@@ -68,8 +68,9 @@ No text found on page 3
     Subdictionary /XObject = (/img0=Stream of type: /XObject)
   Subdictionary /Parent = (/Type=/Pages, /Count=7, /Kids=[1 0 R, 5 0 R, 6 0 R, 8 0 R, 11 0 R, 14 0 R, 17 0 R])
 - - - - - XObject Summary - - - - - -
------- /img0 - subtype = /Image, length = 75 bytes, class = com.itextpdf.text.pdf.PRStream ------
-(/Type=/XObject, /Subtype=/Image, /Width=410, /Height=10, /Length=75, /ColorSpace=/DeviceRGB, /BitsPerComponent=8, /Filter=/FlateDecode)
+------ /img0 - subtype = /Image, length = 14 bytes, class = com.itextpdf.text.pdf.PRStream ------
+(/Type=/XObject, /Subtype=/Image, /Width=410, /Height=10, /Length=14, /ColorSpace=/DeviceGray, /BitsPerComponent=1, /Filter=/CCITTFaxDecode, /DecodeParms=Dictionary)
+    Subdictionary /DecodeParms = (/K=-1, /Columns=410, /Rows=10)
 - - - - - Content Stream - - - - - -
 q
 q 410 0 0 10 0 0 cm /img0 Do Q
