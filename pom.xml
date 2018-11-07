@@ -4,7 +4,7 @@
 
 	<groupId>com.github.merge2pdf</groupId>
 	<artifactId>merge2pdf</artifactId>
-	<version>1.1</version>
+	<version>1.2-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>Merge-to-PDF</name>
@@ -21,7 +21,7 @@
 		<url>https://github.com/dmak/merge2pdf</url>
 		<connection>scm:git:https://github.com/dmak/merge2pdf.git</connection>
 		<developerConnection>scm:git:https://dmak@github.com/dmak/merge2pdf.git</developerConnection>
-		<tag>release-1.1</tag>
+		<tag>HEAD</tag>
 	</scm>
 
 	<issueManagement>
