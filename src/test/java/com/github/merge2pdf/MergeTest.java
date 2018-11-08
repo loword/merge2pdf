@@ -6,10 +6,14 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.ref.WeakReference;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -50,7 +54,7 @@ public class MergeTest {
 	            "src/test/resources/" + MergeTest.class.getPackage().getName().replace('.', '/'));
 	static final File			OUTPUT_DIR	 = new File("target");
 
-	private static final String	PAGE_SIZE	 = Opt.A.name() + "5";
+	private static final String	PAGE_SIZE	 = Opt.A + "5";
 	private static final String	IMAGE_FORMAT = "tiff";
 
 	static final int			IMAGE_WIDTH	 = Math.round(PageSize.getRectangle(PAGE_SIZE).getWidth());
@@ -68,7 +72,7 @@ public class MergeTest {
 
 		List<String> args = new ArrayList<String>();
 
-		args.add("--" + Opt.merge.name());
+		args.add("--" + Opt.merge);
 
 		// List all generated TIFF images and form list of CLI arguments:
 		for (File file : IMAGES_DIR.listFiles(new FilenameFilter() {
@@ -87,15 +91,37 @@ public class MergeTest {
 
 	@Test
 	public void testMergeWithNoFiles() throws Exception {
-		assertEquals(ExitCode.NOT_ENOUGH_FILES, MergeToPdf.processOptions(new String[] { "--" + Opt.merge.name() }));
+		assertEquals(ExitCode.NOT_ENOUGH_FILES, MergeToPdf.processOptions(new String[] { "--" + Opt.merge }));
 		assertEquals(ExitCode.NOT_ENOUGH_FILES,
-		            MergeToPdf.processOptions(new String[] { "--" + Opt.merge.name(), "one.pdf" }));
+		            MergeToPdf.processOptions(new String[] { "--" + Opt.merge, "one.pdf" }));
+	}
+
+	@Test
+	public void testMergeWithInvalidScaleBox() throws Exception {
+		assertEquals(ExitCode.INVALID_OPTION,
+		            MergeToPdf.processOptions(new String[] { "-m", "-s", "x10", "in.pdf", "out.pdf" }));
+		assertEquals(ExitCode.INVALID_OPTION,
+		            MergeToPdf.processOptions(new String[] { "-m", "-s", "10x", "in.pdf", "out.pdf" }));
+		assertEquals(ExitCode.INVALID_OPTION,
+		            MergeToPdf.processOptions(new String[] { "-m", "-s", "AxB", "in.pdf", "out.pdf" }));
+		assertEquals(ExitCode.INVALID_OPTION,
+		            MergeToPdf.processOptions(new String[] { "-m", "-s", "ZZ", "in.pdf", "out.pdf" }));
 	}
 
 	@Test
 	public void testMergeWithInvalidPage() throws Exception {
 		assertEquals(ExitCode.INVALID_OPTION,
 		            MergeToPdf.processOptions(new String[] { "-m", "-A!", "in.pdf", "out.pdf" }));
+	}
+
+	@Test
+	public void testMergeWithInvalidGravity() throws Exception {
+		assertEquals(ExitCode.INVALID_OPTION,
+		            MergeToPdf.processOptions(new String[] { "-m", "-g", "center", "in.pdf", "out.pdf" }));
+		assertEquals(ExitCode.INVALID_OPTION,
+		            MergeToPdf.processOptions(new String[] { "-m", "-A2", "-g", "unknown", "in.pdf", "out.pdf" }));
+		assertEquals(ExitCode.INVALID_OPTION,
+		            MergeToPdf.processOptions(new String[] { "-m", "-A1", "-g", "south_west", "in.pdf", "out.pdf" }));
 	}
 
 	@Test
@@ -116,12 +142,12 @@ public class MergeTest {
 
 	@Test
 	public void testMergeDpi() {
-		runTest(ArrayUtils.insert(0, args, "-" + Opt.dpi.name()), "dpi");
+		runTest(ArrayUtils.insert(0, args, "--" + Opt.dpi), "dpi");
 	}
 
 	@Test
 	public void testMergeDpiBorder() {
-		runTest(ArrayUtils.insert(0, args, "-" + Opt.dpi.name(), "--" + Opt.border.name(), "50"), "dpi_border");
+		runTest(ArrayUtils.insert(0, args, "-d", "--" + Opt.border, "50"), "dpi_border");
 	}
 
 	@Test
@@ -131,12 +157,88 @@ public class MergeTest {
 
 	@Test
 	public void testMergePageBorder() {
-		runTest(ArrayUtils.insert(0, args, "-" + PAGE_SIZE, "--" + Opt.border.name(), "10"), "page_border");
+		runTest(ArrayUtils.insert(0, args, "-" + PAGE_SIZE, "--" + Opt.border, "10"), "page_border");
+	}
+
+	@Test
+	public void testMergeDpiPage() {
+		runTest(ArrayUtils.insert(0, args, "--" + Opt.dpi, "-" + PAGE_SIZE), "dpi_page");
+	}
+
+	@Test
+	public void testMergeDpiPageBorder() {
+		runTest(ArrayUtils.insert(0, args, "--" + Opt.dpi, "-" + PAGE_SIZE, "--" + Opt.border, "10"),
+		            "dpi_page_border");
+	}
+
+	@Test
+	public void testMergeScale() {
+		runTest(ArrayUtils.insert(0, args, "--" + Opt.scale, "100x100"), "scale");
+	}
+
+	@Test
+	public void testMergeScalePage() {
+		// Scale to page prevails over scale to box:
+		runTest(ArrayUtils.insert(0, args, "-s", "1000x1000", "-A5"), "scale_page");
+		runTest(ArrayUtils.insert(0, args, "-s", "10000x1000", "-A5"), "scale_page");
+		runTest(ArrayUtils.insert(0, args, "-s", "100000x1000", "-A5"), "scale_page");
+		// Scale to box does not have any effect:
+		runTest(ArrayUtils.insert(0, args, "-s", "A5", "-A5"), "scale_page");
+	}
+
+	@Test
+	public void testGravityTop() {
+		runTest(ArrayUtils.insert(0, args, "-A3", "--" + Opt.gravity, "top"), "gravity_top");
+		runTest(ArrayUtils.insert(0, args, "-A3", "--" + Opt.gravity, "north"), "gravity_top");
+	}
+
+	@Test
+	public void testGravityTopRight() {
+		runTest(ArrayUtils.insert(0, args, "-A3", "--" + Opt.gravity, "topRight"), "gravity_top_right");
+		runTest(ArrayUtils.insert(0, args, "-A3", "--" + Opt.gravity, "northEast"), "gravity_top_right");
+	}
+
+	@Test
+	public void testGravityRight() {
+		runTest(ArrayUtils.insert(0, args, "-A3", "--" + Opt.gravity, "RIGHT"), "gravity_right");
+		runTest(ArrayUtils.insert(0, args, "-A3", "--" + Opt.gravity, "EAST"), "gravity_right");
+	}
+
+	@Test
+	public void testGravityBottomRight() {
+		runTest(ArrayUtils.insert(0, args, "-A3", "--" + Opt.gravity, "BottomRight"), "gravity_bottom_right");
+		runTest(ArrayUtils.insert(0, args, "-A3", "--" + Opt.gravity, "SouthEast"), "gravity_bottom_right");
+	}
+
+	@Test
+	public void testGravityBottom() {
+		runTest(ArrayUtils.insert(0, args, "-A3", "--" + Opt.gravity, "boTTom"), "gravity_bottom");
+		runTest(ArrayUtils.insert(0, args, "-A3", "--" + Opt.gravity, "sOUth"), "gravity_bottom");
+	}
+
+	@Test
+	public void testGravityBottomLeft() {
+		runTest(ArrayUtils.insert(0, args, "-A3", "--" + Opt.gravity, "bottomLEFT"), "gravity_bottom_left");
+		runTest(ArrayUtils.insert(0, args, "-A3", "--" + Opt.gravity, "southWest"), "gravity_bottom_left");
+	}
+
+	@Test
+	public void testGravityLeft() {
+		runTest(ArrayUtils.insert(0, args, "-A3", "--" + Opt.gravity, "left"), "gravity_left");
+		runTest(ArrayUtils.insert(0, args, "-A3", "--" + Opt.gravity, "west"), "gravity_left");
+	}
+
+	@Test
+	public void testGravityTopLeft() {
+		runTest(ArrayUtils.insert(0, args, "-A3", "--" + Opt.gravity, "TOPleft"), "gravity_top_left");
+		runTest(ArrayUtils.insert(0, args, "-A3", "--" + Opt.gravity, "NORTHwest"), "gravity_top_left");
 	}
 
 	private static void runTest(String[] args, String testResourceSuffix) {
 		try {
 			File pdfFile = new File(OUTPUT_DIR, "out_" + testResourceSuffix + ".pdf");
+
+			releaseDirectByteBuffer(pdfFile);
 
 			assertEquals(ExitCode.OK, MergeToPdf.processOptions(ArrayUtils.add(args, pdfFile.getPath())));
 
@@ -216,6 +318,38 @@ public class MergeTest {
 		}
 		finally {
 			IOUtils.closeQuietly(outputStream);
+		}
+	}
+
+	/**
+	 * Even though the stream which is associated with OUTPUT_PDF_NAME is closed, "java.io.FileNotFoundException:
+	 * out.pdf (The requested operation cannot be per formed on a file with a user-mapped section open)" is thrown.
+	 * 
+	 * @see <a href="https://stackoverflow.com/a/45850877/267197">How to unmap a file from memory mapped using
+	 *      FileChannel in java</a>
+	 */
+	private static void releaseDirectByteBuffer(File outputFile) throws IOException {
+		if (!outputFile.exists()) {
+			return;
+		}
+
+		FileInputStream os = new FileInputStream(outputFile);
+		MappedByteBuffer buffer = os.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, 1);
+		os.close();
+		// Below line of code does not help:
+		//((sun.nio.ch.DirectBuffer) buffer).cleaner().clean();
+
+		WeakReference<MappedByteBuffer> bufferWeakRef = new WeakReference<MappedByteBuffer>(buffer);
+		buffer = null;
+
+		final long startTime = System.currentTimeMillis();
+		while (null != bufferWeakRef.get()) {
+			if (System.currentTimeMillis() - startTime > 1000) {
+				// Give up and home for the best:
+				return;
+			}
+			System.gc();
+			Thread.yield();
 		}
 	}
 

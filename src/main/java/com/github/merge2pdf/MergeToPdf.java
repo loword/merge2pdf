@@ -54,7 +54,22 @@ public class MergeToPdf {
 	            + "/merge2pdf/pom.properties";
 
 	enum Opt {
-		merge, extract, dpi, A, border, prefix, version, help;
+		merge, extract, dpi, A, gravity, scale, border, prefix, version, help;
+	}
+
+	enum Gravity {
+		center("centre"), top("north"), topRight("northEast"), right("east"), bottomRight("southEast"), bottom(
+		            "south"), bottomLeft("southWest"), left("west"), topLeft("northWest");
+
+		private final String alias;
+
+		private Gravity(String alias) {
+			this.alias = alias;
+		}
+
+		public String alias() {
+			return alias;
+		}
 	}
 
 	enum ExitCode {
@@ -85,10 +100,15 @@ public class MergeToPdf {
 
 		options.addOption("m", Opt.merge.name(), false, "Merge given input files into destination PDF");
 		options.addOption("e", Opt.extract.name(), false, "Extact images from given file");
-		options.addOption(Opt.dpi.name(), false, "Respect image DPI when scaling");
+		options.addOption("d", Opt.dpi.name(), false, "Respect image DPI when scaling up/down");
+		options.addOption("s", Opt.scale.name(), true,
+		            "Scale down (if necessary) image to the box given as page i.e. A4 or dimension i.e. 180x20");
 		options.addOption(Option.builder(Opt.A.name()).hasArg().type(Integer.class)
-		            .desc("Scale image to given page i.e. -A4 or -A3").build());
-		options.addOption("b", Opt.border.name(), true, "Add given border in pixels to each page i.e. -b10");
+		            .desc("Place image to given page (i.e. -A4 or -A3) scaling down if necessary").build());
+		options.addOption("g", Opt.gravity.name(), true,
+		            "Place an image to the page at given corner i.e. topleft (default: center)");
+		options.addOption("b", Opt.border.name(), true,
+		            "Add given border in pixels to each page when page is provided i.e. -b10");
 		options.addOption("p", Opt.prefix.name(), true, "Output directory and/or file prefix");
 		options.addOption("v", Opt.version.name(), false, "Print version and exit");
 		options.addOption("h", Opt.help.name(), false, "Print help and exit");
@@ -125,13 +145,12 @@ public class MergeToPdf {
 			HelpFormatter helpFormatter = new HelpFormatter();
 			helpFormatter.setSyntaxPrefix("Usage:");
 			helpFormatter.setOptionComparator(null);
-			helpFormatter.printHelp(
-			            helpFormatter.getNewLine() + "merge2pdf --" + Opt.merge + " [-" + Opt.A + "num|-" + Opt.dpi
-			                        + "|--" + Opt.border + " num] one.pdf [two.jpg three.png ...] out.pdf"
-			                        + helpFormatter.getNewLine() + "merge2pdf --" + Opt.extract + " [--" + Opt.prefix
-			                        + " dir/prefix] in.pdf" + helpFormatter.getNewLine() + "merge2pdf --" + Opt.version
-			                        + helpFormatter.getNewLine() + "merge2pdf --" + Opt.help,
-			            null, options, null, false);
+			helpFormatter.printHelp(helpFormatter.getNewLine() + "merge2pdf --" + Opt.merge + " [--" + Opt.dpi + "|--"
+			            + Opt.scale + " dim|-" + Opt.A + "num|--" + Opt.border
+			            + " num] one.pdf [two.jpg three.png ...] out.pdf" + helpFormatter.getNewLine() + "merge2pdf --"
+			            + Opt.extract + " [--" + Opt.prefix + " dir/prefix] in.pdf" + helpFormatter.getNewLine()
+			            + "merge2pdf --" + Opt.version + helpFormatter.getNewLine() + "merge2pdf --" + Opt.help, null,
+			            options, null, false);
 
 			return ExitCode.HELP;
 		}
@@ -158,6 +177,35 @@ public class MergeToPdf {
 
 		// If page is defined, images are scaled to that page size:
 		boolean scaleToDpi = cli.hasOption(Opt.dpi.name());
+
+		Rectangle scaleToBox = null;
+
+		if (cli.hasOption(Opt.scale.name())) {
+			String scaleToBoxValue = cli.getOptionValue(Opt.scale.name());
+
+			int pos = scaleToBoxValue.indexOf('x');
+
+			if (pos > 0) {
+				try {
+					scaleToBox = new Rectangle(Integer.parseInt(scaleToBoxValue.substring(0, pos)),
+					            Integer.parseInt(scaleToBoxValue.substring(pos + 1)));
+				}
+				catch (NumberFormatException e) {
+					logger.error(e.getMessage());
+					return ExitCode.INVALID_OPTION;
+				}
+			}
+			else {
+				try {
+					scaleToBox = PageSize.getRectangle(scaleToBoxValue);
+				}
+				catch (RuntimeException e) {
+					logger.error(e.getMessage());
+					return ExitCode.INVALID_OPTION;
+				}
+			}
+		}
+
 		Rectangle scaleToPage = null;
 
 		if (cli.hasOption(Opt.A.name())) {
@@ -168,6 +216,32 @@ public class MergeToPdf {
 				logger.error(e.getMessage());
 				return ExitCode.INVALID_OPTION;
 			}
+		}
+
+		Gravity gravity = null;
+
+		if (cli.hasOption(Opt.gravity.name())) {
+			String gravityValue = cli.getOptionValue(Opt.gravity.name());
+
+			for (Gravity g : Gravity.values()) {
+				if (g.name().equalsIgnoreCase(gravityValue) || g.alias().equalsIgnoreCase(gravityValue)) {
+					gravity = g;
+					break;
+				}
+			}
+
+			if (gravity == null) {
+				logger.error("Unknown gravity value " + gravityValue);
+				return ExitCode.INVALID_OPTION;
+			}
+
+			if (scaleToPage == null) {
+				logger.error("Gravity is only applicable when page is defined");
+				return ExitCode.INVALID_OPTION;
+			}
+		}
+		else {
+			gravity = Gravity.center;
 		}
 
 		int border = 0;
@@ -234,43 +308,62 @@ public class MergeToPdf {
 				}
 
 				for (Image image : images) {
-					if (scaleToPage != null || scaleToDpi) {
-						// The image should be scaled according to DPI (if available) before it is placed to the page.
-						// See also https://stackoverflow.com/a/8245450/267197
-						if (image.getDpiX() > 0 && image.getDpiY() > 0
-						            && (image.getDpiX() != PDF_DPI || image.getDpiY() != PDF_DPI)) {
-							image.scalePercent(100f * PDF_DPI / image.getDpiX(), 100f * PDF_DPI / image.getDpiY());
-							logger.debug(String.format("Scaled image as to %d DPI (%.2f, %.2f) -> (%.2f, %.2f)",
-							            image.getDpiX(), image.getWidth(), image.getHeight(), image.getScaledWidth(),
-							            image.getScaledHeight()));
-						}
-
-						if (scaleToPage != null) {
-							Rectangle page = scaleToPage;
-
-							// If image does not fit the page after DPI scale, then scale it further down:
-							if (isImageNotFittingPage(image, page, border)) {
-								if (image.getScaledWidth() > image.getScaledHeight()) {
-									// Rotate the page by 90 degrees effectively changing portrait orientation to landscape and vice versa:
-									page = new Rectangle(scaleToPage.getHeight(), scaleToPage.getWidth());
-
-									if (isImageNotFittingPage(image, page, border)) {
-										image.scaleToFit(page.getWidth() - border * 2, page.getHeight() - border * 2);
-									}
-								}
-								else {
-									image.scaleToFit(page.getWidth() - border * 2, page.getHeight() - border * 2);
-								}
-							}
-
-							// Align the image with top-left corner of the page:
-							image.setAbsolutePosition(border, page.getHeight() - image.getScaledHeight() - border);
-							imageDocument.setPageSize(page);
-						}
+					// The image should be scaled according to DPI (if available) before it is placed to the page.
+					// See also https://stackoverflow.com/a/8245450/267197
+					if (scaleToDpi && image.getDpiX() > 0 && image.getDpiY() > 0
+					            && (image.getDpiX() != PDF_DPI || image.getDpiY() != PDF_DPI)) {
+						image.scalePercent(100f * PDF_DPI / image.getDpiX(), 100f * PDF_DPI / image.getDpiY());
+						logger.debug(String.format("Scaled image as to %d DPI (%.2f, %.2f) -> (%.2f, %.2f)",
+						            image.getDpiX(), image.getWidth(), image.getHeight(), image.getScaledWidth(),
+						            image.getScaledHeight()));
 					}
 
-					if (scaleToPage == null) {
-						// The page will be scaled to given page when it will be printed:
+					if (scaleToBox != null) {
+						scaleToBox(image, scaleToBox, 0);
+					}
+
+					if (scaleToPage != null) {
+						Rectangle page = scaleToBox(image, scaleToPage, border);
+
+						imageDocument.setPageSize(page);
+
+						//FIXME: apply gravity
+						switch (gravity) {
+						case center:
+							image.setAbsolutePosition(page.getWidth() / 2 - image.getScaledWidth() / 2,
+							            page.getHeight() / 2 - image.getScaledHeight() / 2);
+							break;
+						case top:
+							image.setAbsolutePosition(page.getWidth() / 2 - image.getScaledWidth() / 2,
+							            page.getHeight() - image.getScaledHeight() - border);
+							break;
+						case topRight:
+							image.setAbsolutePosition(page.getWidth() - image.getScaledWidth() - border,
+							            page.getHeight() - image.getScaledHeight() - border);
+							break;
+						case right:
+							image.setAbsolutePosition(page.getWidth() - image.getScaledWidth() - border,
+							            page.getHeight() / 2 - image.getScaledHeight() / 2);
+							break;
+						case bottomRight:
+							image.setAbsolutePosition(page.getWidth() - image.getScaledWidth() - border, border);
+							break;
+						case bottom:
+							image.setAbsolutePosition(page.getWidth() / 2 - image.getScaledWidth() / 2, border);
+							break;
+						case bottomLeft:
+							image.setAbsolutePosition(border, border);
+							break;
+						case left:
+							image.setAbsolutePosition(border, page.getHeight() / 2 - image.getScaledHeight() / 2);
+							break;
+						case topLeft:
+							image.setAbsolutePosition(border, page.getHeight() - image.getScaledHeight() - border);
+							break;
+						}
+					}
+					else {
+						// The page could be later scaled to given page when it is printed by PDF viewer:
 						image.setAbsolutePosition(border, border);
 						imageDocument.setPageSize(new Rectangle(image.getScaledWidth() + border * 2,
 						            image.getScaledHeight() + border * 2));
@@ -349,10 +442,32 @@ public class MergeToPdf {
 	}
 
 	/**
-	 * Returns {@code true} if given image does not fit the given page.
+	 * Scale down given image to given box..
 	 */
-	private static boolean isImageNotFittingPage(Image image, Rectangle page, int border) {
-		return image.getScaledWidth() > page.getWidth() - border * 2
-		            || image.getScaledHeight() > page.getHeight() - border * 2;
+	private static Rectangle scaleToBox(Image image, Rectangle box, int border) {
+		// If image does not fit the page after DPI and box scale (if requested), then scale it further down:
+		if (isImageNotFittingBox(image, box, border)) {
+			if (image.getScaledWidth() > image.getScaledHeight()) {
+				// Rotate the page by 90 degrees effectively changing portrait orientation to landscape and vice versa:
+				box = new Rectangle(box.getHeight(), box.getWidth());
+
+				if (isImageNotFittingBox(image, box, border)) {
+					image.scaleToFit(box.getWidth() - border * 2, box.getHeight() - border * 2);
+				}
+			}
+			else {
+				image.scaleToFit(box.getWidth() - border * 2, box.getHeight() - border * 2);
+			}
+		}
+
+		return box;
+	}
+
+	/**
+	 * Returns {@code true} if given image does not fit the given box including the given margin (border).
+	 */
+	private static boolean isImageNotFittingBox(Image image, Rectangle box, int border) {
+		return image.getScaledWidth() > box.getWidth() - border * 2
+		            || image.getScaledHeight() > box.getHeight() - border * 2;
 	}
 }

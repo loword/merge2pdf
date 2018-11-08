@@ -32,7 +32,7 @@ These services perform recompression:
 
 ## Usage
 
-`java -jar merge2pdf.jar -m [-dpi|-Anum] [-b num] one.pdf [two.jpg three.png ...] out.pdf`
+`java -jar merge2pdf.jar -m [-d] [-s dim] [-Anum] [-g pos] [-b num] one.pdf [two.jpg three.png ...] out.pdf`
 
 `java -jar merge2pdf.jar -e [-p directory/file_prefix] in.pdf`
 
@@ -48,12 +48,20 @@ These services perform recompression:
 	<td>Merge PDF/image files that follow into one PDF.</td>
 </tr>
 <tr>
-	<td><tt>-dpi</tt></td>
+	<td><tt>-d|--dpi</tt></td>
 	<td>If image metainformation provides DPI, then scale the image down, namely to <tt>72 / image_DPI × 100%</tt>, where 72 DPI is a standard PDF DPI. This is necessary in case one needs to merge images with different DPI so that they are represented on the same scale in resulting PDF.</td>
 </tr>
 <tr>
+	<td><tt>-s|--scale</tt></td>
+	<td>Scale down (if necessary) image so that it fits provided box given as a page (A4) or dimension in pixels (180x20).</td>
+</tr>
+<tr>
 	<td><tt>-An</tt>, e.g. <tt>-A3</tt>, <tt>-A4</tt>, <tt>-A5</tt>, ...</td>
-	<td>Scale the image down to fit the given page size (A3, A4, ...). If this options is provided, then `-dpi` is implicitly enabled. Also auto-rotation is applied, i.e. if image width is bigger than height and the image does not fit the portrait-oriented page, page orientation is set to landscape and then the image is scaled down (if necessary). Images are anchored to the top-left corner.</td>
+	<td>Scale the image down to fit the given page size (A3, A4, ...). Auto-rotation is applied, i.e. if image width is bigger than height and the image does not fit the portrait-oriented page, page orientation is set to landscape and then the image is scaled down (if necessary). Images are anchored to the top-left corner.</td>
+</tr>
+<tr>
+	<td><tt>-g|--gravity</tt></td>
+	<td>Place an image to the page at given corner. Requires that page size is given (e.g. <tt>-A4</tt>, see above). Possible values (case insensitive): center / centre, top / north, topright / northeast, right / east, bottomright / southeast, bottom / south, bottomleft / southwest, left / west, topleft / northwest.</td>
 </tr>
 <tr>
 	<td><tt>-b|--border</tt></td>
@@ -61,11 +69,11 @@ These services perform recompression:
 </tr>
 <tr>
 	<td><tt>-e|--extract</tt></td>
-	<td>Extract images from given PDF. Images get automatic suffixes like _1, _2, etc and appropriate extension (`.jpg`, `.png`). Note that this function is still experimental as it does not fully support extraction of TIFF files, which are saved in PNG format.</td>
+	<td>Extract images from given PDF. Images get automatic suffixes like <tt>_1</tt>, <tt>_2</tt>, etc and appropriate extension (<tt>.jpg</tt>, <tt>.png</tt>). Note that this function is still experimental as it does not fully support extraction of TIFF files, which are saved in PNG format.</td>
 </tr>
 <tr>
 	<td><tt>-p|--prefix</tt></td>
-	<td>Use given directory or directory + file as a prefix. If omitted, current directory is used to save extracted files.</td>
+	<td>Use given directory or directory + file as a prefix. If omitted, the current directory is used to save extracted files.</td>
 </tr>
 <tr>
 	<td><tt>-v|--version</tt></td>
@@ -83,7 +91,9 @@ Note that output PDF is overwritten without any warnings.
 
 * `java -jar merge2pdf.jar --merge 1.jpg 2.tiff all.pdf` – merge images `1.jpg` and `2.tiff` into `all.pdf` as is, i.e. each image forms a separate page with the size equal to image
 
-* `java -jar merge2pdf.jar --merge -A3 -b20 1.pdf 2.png 3.png out.pdf` – append images `2.jpg` and `3.png` to `1.pdf` and save the resulting PDF to `out.pdf`; the images are placed to page size A3 padded with border 10 pixels and resized (if necessary) to fit the given page
+* `java -jar merge2pdf.jar --merge -A3 -b20 1.pdf 2.png 3.png out.pdf` – append images `2.jpg` and `3.png` to `1.pdf` and save the resulting PDF to `out.pdf`; the images are placed to page size A3 padded with border 10 pixels, resized (if necessary) to fit the given page and centered
+
+* `java -jar merge2pdf.jar --merge --dpi -scale 200x100 view1.jpg view2.jpg all.pdf` – merge images `view1.jpg` and `view1.jpg` into `all.pdf`; the images are first scaled according to DPI (that means for example that image with 300dpi is twice smaller than image with 150dpi) and then scaled down (if don't fit) the given box with width 200px and height 100px.
 
 ## Development / Contribution
 

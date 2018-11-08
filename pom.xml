@@ -36,6 +36,11 @@
 
 	<licenses>
 		<license>
+			<!--
+				The modified iText code, which is part of this project, is AGPL-licensed.
+				However "license poisoning" perhaps does not affect the rest of the code, see
+					https://softwareengineering.stackexchange.com/a/314908/34314
+			-->
 			<name>AGPLv3 License</name>
 			<url>https://www.gnu.org/licenses/agpl-3.0-standalone.html</url>
 			<distribution>repo</distribution>
@@ -60,11 +65,27 @@
 							<configuration>
 								<tagNameFormat>release-@{project.version}</tagNameFormat>
 								<!-- By default goal is "deploy" but since there is no <distributionManagement> in this POM, it will fail: -->
-								<goals>install</goals>
+								<goals>install site site:jar</goals>
 							</configuration>
 						</plugin>
 					</plugins>
 				</pluginManagement>
+
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>sign-artifacts</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
 			</build>
 		</profile>
 
@@ -85,7 +106,7 @@
 									<goal>report</goal>
 								</goals>
 								<configuration>
-									<!-- For for issue https://github.com/trautonen/coveralls-maven-plugin/issues/90 -->
+									<!-- Fix for issue https://github.com/trautonen/coveralls-maven-plugin/issues/90 -->
 									<timestampFormat>EpochMillis</timestampFormat>
 								</configuration>
 							</execution>
@@ -187,6 +208,18 @@
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-gpg-plugin</artifactId>
+					<version>1.6</version>
+					<configuration>
+						<!-- Fix for "gpg: signing failed: Inappropriate ioctl for device", see https://gist.github.com/michaelajr/ff4693bce9fc20e5200b34683aa4ba51 and https://ru.stackoverflow.com/questions/791317/ -->
+						<gpgArguments>
+							<arg>--pinentry-mode</arg>
+							<arg>loopback</arg>
+						</gpgArguments>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-site-plugin</artifactId>
 					<version>3.7.1</version>
 				</plugin>
@@ -249,7 +282,7 @@
 								<Build-Timestamp>${maven.build.timestamp}</Build-Timestamp>
 								<Implementation-Build>${project.buildNumber}</Implementation-Build>	<!-- set by "buildnumber-maven-plugin" -->
 								<Scm-Build>${project.scmBranch}</Scm-Build>							<!-- set by "buildnumber-maven-plugin" -->
-								<Scm-Url>${project.scm.developerConnection}</Scm-Url>
+								<Scm-Url>${project.scm.connection}</Scm-Url>
 								<Build-Jdk>${java.version} (${java.vendor})</Build-Jdk>
 								<!-- <Build-OS>${os.name} ${os.arch} ${os.version}</Build-OS> -->
 							</manifestEntries>
@@ -280,7 +313,7 @@
 				</executions>
 			</plugin>
 			<!--
-				Define variable with SVN build number to be added to JAR/WAR manifest files.
+				Define variable with VCS build number to be added to JAR manifest files.
 				See http://mojo.codehaus.org/buildnumber-maven-plugin/usage.html for more details.
 			-->
 			<plugin>
