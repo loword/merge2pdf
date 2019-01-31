@@ -1,0 +1,67 @@
+==============Page 1====================
+- - - - - Dictionary - - - - - -
+(/Type=/Page, /Resources=Dictionary, /MediaBox=[0, 0, 595.32, 841.92], /Contents=Stream, /Parent=Dictionary of type: /Pages)
+  Subdictionary /Resources = (/Font=Dictionary, /ProcSet=[/PDF, /Text, /ImageB, /ImageC, /ImageI])
+    Subdictionary /Font = (/F1=Dictionary of type: /Font)
+      Subdictionary /F1 = (/Type=/Font, /Subtype=/TrueType, /Name=/F1, /BaseFont=/Arial, /Encoding=/WinAnsiEncoding, /FontDescriptor=Dictionary of type: /FontDescriptor, /FirstChar=32, /LastChar=122, /Widths=[278, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 611, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 556, 556, 500, 556, 556, 278, 556, 556, 222, 222, 500, 222, 833, 556, 556, 556, 556, 333, 500, 278, 556, 500, 722, 500, 500, 500])
+        Subdictionary /FontDescriptor = (/Type=/FontDescriptor, /FontName=/Arial, /Flags=32, /ItalicAngle=0, /Ascent=905, /Descent=-210, /CapHeight=728, /AvgWidth=441, /MaxWidth=2665, /FontWeight=400, /XHeight=250, /Leading=33, /StemV=44, /FontBBox=[-665, -210, 2000, 728])
+  Subdictionary /Parent = (/Type=/Pages, /Count=2, /Kids=[1 0 R, 7 0 R])
+- - - - - XObject Summary - - - - - -
+No XObjects
+- - - - - Content Stream - - - - - -
+BT
+/F1 12 Tf
+1 0 0 1 72.024 758.88 Tm
+0 g
+0 G
+[(T)-8(h)6(e)-3( q)4(u)-3(ick b)-3(row)11(n)-3( )8(f)-11(o)-3(x)10( ju)-3(m)-6(p)-3(s )8(o)-3(v)10(e)-3(r th)-4(e)-3( la)-3(z)10(y)10( d)-5(o)-3(g)] TJ
+ET
+BT
+1 0 0 1 309.53 758.88 Tm
+[( )] TJ
+ET
+- - - - - Text Extraction - - - - - -
+The quick brown fox jumps over the lazy dog 
+
+==============Page 2====================
+- - - - - Dictionary - - - - - -
+(/Type=/Page, /Resources=Dictionary, /MediaBox=[0, 0, 595.32, 841.92], /Contents=Stream, /StructParents=0, /Parent=Dictionary of type: /Pages)
+  Subdictionary /Resources = (/Font=Dictionary, /ProcSet=[/PDF, /Text, /ImageB, /ImageC, /ImageI])
+    Subdictionary /Font = (/F1=Dictionary of type: /Font, /F2=Dictionary of type: /Font)
+      Subdictionary /F1 = (/Type=/Font, /Subtype=/TrueType, /Name=/F1, /BaseFont=/Arial, /Encoding=/WinAnsiEncoding, /FontDescriptor=Dictionary of type: /FontDescriptor, /FirstChar=32, /LastChar=120, /Widths=[278, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 667, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 611, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 556, 0, 0, 0, 556, 0, 0, 0, 222, 0, 0, 222, 0, 556, 0, 0, 0, 333, 0, 278, 0, 0, 0, 500])
+        Subdictionary /FontDescriptor = (/Type=/FontDescriptor, /FontName=/Arial, /Flags=32, /ItalicAngle=0, /Ascent=905, /Descent=-210, /CapHeight=728, /AvgWidth=441, /MaxWidth=2665, /FontWeight=400, /XHeight=250, /Leading=33, /StemV=44, /FontBBox=[-665, -210, 2000, 728])
+      Subdictionary /F2 = (/Type=/Font, /Subtype=/TrueType, /Name=/F2, /BaseFont=/Times#20New#20Roman, /Encoding=/WinAnsiEncoding, /FontDescriptor=Dictionary of type: /FontDescriptor, /FirstChar=32, /LastChar=120, /Widths=[250, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 722, 0, 0, 0, 667, 0, 611, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 444, 0, 0, 0, 444, 0, 0, 0, 278, 0, 0, 0, 778, 500, 500, 0, 0, 0, 389, 278, 0, 0, 722, 500])
+        Subdictionary /FontDescriptor = (/Type=/FontDescriptor, /FontName=/Times#20New#20Roman, /Flags=32, /ItalicAngle=0, /Ascent=891, /Descent=-216, /CapHeight=693, /AvgWidth=401, /MaxWidth=2568, /FontWeight=400, /XHeight=250, /Leading=42, /StemV=40, /FontBBox=[-568, -216, 2000, 693])
+  Subdictionary /Parent = (/Type=/Pages, /Count=2, /Kids=[1 0 R, 7 0 R])
+- - - - - XObject Summary - - - - - -
+No XObjects
+- - - - - Content Stream - - - - - -
+ /P <</MCID 0>> BDC BT
+/F1 12 Tf
+1 0 0 1 72.024 758.88 Tm
+0 g
+0 G
+[(T)-8(e)-3(x)10(t )-3(in )-3(A)-2(ri)5(a)-3(l)] TJ
+ET
+BT
+1 0 0 1 135.38 758.88 Tm
+[( )] TJ
+ET
+ EMC  /P <</MCID 1>> BDC BT
+1 0 0 1 72.024 745.06 Tm
+[( )] TJ
+ET
+ EMC  /P <</MCID 2>> BDC BT
+/F2 12 Tf
+1 0 0 1 72.024 731.5 Tm
+[(Te)5(x)-9(t i)-3(n Tim)-2(e)4(s Ne)5(w Rom)7(a)4(n)] TJ
+ET
+BT
+1 0 0 1 202.61 731.5 Tm
+[( )] TJ
+ET
+ EMC - - - - - Text Extraction - - - - - -
+Text in Arial 
+ 
+Text in Times New Roman 
+

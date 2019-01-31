@@ -8,6 +8,8 @@ import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
@@ -17,6 +19,7 @@ import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.io.RandomAccessSource;
 import com.itextpdf.text.io.RandomAccessSourceFactory;
 import com.itextpdf.text.pdf.PRStream;
+import com.itextpdf.text.pdf.PdfDictionary;
 import com.itextpdf.text.pdf.PdfName;
 import com.itextpdf.text.pdf.PdfObject;
 import com.itextpdf.text.pdf.PdfReader;
@@ -54,7 +57,21 @@ public class MergeToPdf {
 	            + "/merge2pdf/pom.properties";
 
 	enum Opt {
-		merge, extract, dpi, A, gravity, scale, border, prefix, version, help;
+		merge, extract, dpi, A, gravity, scale, border, removeFont("remove-font"), prefix, version, help;
+
+		private final String value;
+
+		private Opt() {
+			this.value = name();
+		}
+
+		private Opt(String value) {
+			this.value = value;
+		}
+
+		public String value() {
+			return value;
+		}
 	}
 
 	enum Gravity {
@@ -98,20 +115,22 @@ public class MergeToPdf {
 	static ExitCode processOptions(String[] args) throws DocumentException, IOException {
 		Options options = new Options();
 
-		options.addOption("m", Opt.merge.name(), false, "Merge given input files into destination PDF");
-		options.addOption("e", Opt.extract.name(), false, "Extact images from given file");
-		options.addOption("d", Opt.dpi.name(), false, "Respect image DPI when scaling up/down");
-		options.addOption("s", Opt.scale.name(), true,
+		options.addOption("m", Opt.merge.value(), false, "Merge given input files into destination PDF");
+		options.addOption("e", Opt.extract.value(), false, "Extact images from given file");
+		options.addOption("d", Opt.dpi.value(), false, "Respect image DPI when scaling up/down");
+		options.addOption("s", Opt.scale.value(), true,
 		            "Scale down (if necessary) image to the box given as page i.e. A4 or dimension i.e. 180x20");
-		options.addOption(Option.builder(Opt.A.name()).hasArg().type(Integer.class)
+		options.addOption(Option.builder(Opt.A.value()).hasArg().type(Integer.class)
 		            .desc("Place image to given page (i.e. -A4 or -A3) scaling down if necessary").build());
-		options.addOption("g", Opt.gravity.name(), true,
+		options.addOption("g", Opt.gravity.value(), true,
 		            "Place an image to the page at given corner i.e. topleft (default: center)");
-		options.addOption("b", Opt.border.name(), true,
+		options.addOption("b", Opt.border.value(), true,
 		            "Add given border in pixels to each page when page is provided i.e. -b10");
-		options.addOption("p", Opt.prefix.name(), true, "Output directory and/or file prefix");
-		options.addOption("v", Opt.version.name(), false, "Print version and exit");
-		options.addOption("h", Opt.help.name(), false, "Print help and exit");
+		options.addOption("r", Opt.removeFont.value(), true,
+		            "Remove given embedded font(s) i.e. -rArial or remove all fonts i.e. -r \"\"");
+		options.addOption("p", Opt.prefix.value(), true, "Output directory and/or file prefix");
+		options.addOption("v", Opt.version.value(), false, "Print version and exit");
+		options.addOption("h", Opt.help.value(), false, "Print help and exit");
 
 		CommandLine cli;
 		try {
@@ -122,7 +141,7 @@ public class MergeToPdf {
 			return ExitCode.INVALID_OPTION;
 		}
 
-		if (cli.hasOption(Opt.version.name())) {
+		if (cli.hasOption(Opt.version.value())) {
 			try (InputStream pomStream = MergeToPdf.class.getClassLoader().getSystemClassLoader()
 			            .getResourceAsStream(POM_RESOURCE_NAME)) {
 				if (pomStream == null) {
@@ -138,26 +157,28 @@ public class MergeToPdf {
 			return ExitCode.VERSION;
 		}
 
-		boolean hasMergeOption = cli.hasOption(Opt.merge.name());
-		boolean hasExtractOption = cli.hasOption(Opt.extract.name());
+		boolean hasMergeOption = cli.hasOption(Opt.merge.value());
+		boolean hasExtractOption = cli.hasOption(Opt.extract.value());
 
-		if (cli.hasOption(Opt.help.name()) || !(hasMergeOption || hasExtractOption)) {
+		if (cli.hasOption(Opt.help.value()) || !(hasMergeOption || hasExtractOption)) {
 			HelpFormatter helpFormatter = new HelpFormatter();
 			helpFormatter.setSyntaxPrefix("Usage:");
 			helpFormatter.setOptionComparator(null);
-			helpFormatter.printHelp(helpFormatter.getNewLine() + "merge2pdf --" + Opt.merge + " [--" + Opt.dpi + "|--"
-			            + Opt.scale + " dim|-" + Opt.A + "num|--" + Opt.border
-			            + " num] one.pdf [two.jpg three.png ...] out.pdf" + helpFormatter.getNewLine() + "merge2pdf --"
-			            + Opt.extract + " [--" + Opt.prefix + " dir/prefix] in.pdf" + helpFormatter.getNewLine()
-			            + "merge2pdf --" + Opt.version + helpFormatter.getNewLine() + "merge2pdf --" + Opt.help, null,
-			            options, null, false);
+			helpFormatter.printHelp(helpFormatter.getNewLine() + "merge2pdf --" + Opt.merge.value() + " [--"
+			            + Opt.dpi.value() + "|--" + Opt.scale.value() + " dim|-" + Opt.A.value() + "num|--"
+			            + Opt.border.value() + " num|--" + Opt.removeFont.value()
+			            + " pattern] one.pdf [two.jpg three.png ...] out.pdf" + helpFormatter.getNewLine()
+			            + "merge2pdf --" + Opt.extract.value() + " [--" + Opt.prefix.value() + " dir/prefix] in.pdf"
+			            + helpFormatter.getNewLine() + "merge2pdf --" + Opt.version.value() + helpFormatter.getNewLine()
+			            + "merge2pdf --" + Opt.help.value() + helpFormatter.getNewLine(), null, options, null, false);
 
 			return ExitCode.HELP;
 		}
 
 		if (hasMergeOption) {
 			if (hasExtractOption) {
-				logger.error("Either \"" + Opt.merge + "\" or \"" + Opt.extract + "\" options should be provided.");
+				logger.error("Either \"" + Opt.merge.value() + "\" or \"" + Opt.extract.value()
+				            + "\" options should be provided.");
 				return ExitCode.ILLEGAL_OPTION_COMBINATION;
 			}
 
@@ -176,12 +197,12 @@ public class MergeToPdf {
 		}
 
 		// If page is defined, images are scaled to that page size:
-		boolean scaleToDpi = cli.hasOption(Opt.dpi.name());
+		boolean scaleToDpi = cli.hasOption(Opt.dpi.value());
 
 		Rectangle scaleToBox = null;
 
-		if (cli.hasOption(Opt.scale.name())) {
-			String scaleToBoxValue = cli.getOptionValue(Opt.scale.name());
+		if (cli.hasOption(Opt.scale.value())) {
+			String scaleToBoxValue = cli.getOptionValue(Opt.scale.value());
 
 			int pos = scaleToBoxValue.indexOf('x');
 
@@ -208,9 +229,9 @@ public class MergeToPdf {
 
 		Rectangle scaleToPage = null;
 
-		if (cli.hasOption(Opt.A.name())) {
+		if (cli.hasOption(Opt.A.value())) {
 			try {
-				scaleToPage = PageSize.getRectangle("A" + cli.getOptionValue(Opt.A.name()));
+				scaleToPage = PageSize.getRectangle("A" + cli.getOptionValue(Opt.A.value()));
 			}
 			catch (RuntimeException e) {
 				logger.error(e.getMessage());
@@ -220,8 +241,8 @@ public class MergeToPdf {
 
 		Gravity gravity = null;
 
-		if (cli.hasOption(Opt.gravity.name())) {
-			String gravityValue = cli.getOptionValue(Opt.gravity.name());
+		if (cli.hasOption(Opt.gravity.value())) {
+			String gravityValue = cli.getOptionValue(Opt.gravity.value());
 
 			for (Gravity g : Gravity.values()) {
 				if (g.name().equalsIgnoreCase(gravityValue) || g.alias().equalsIgnoreCase(gravityValue)) {
@@ -246,8 +267,8 @@ public class MergeToPdf {
 
 		int border = 0;
 
-		if (cli.hasOption(Opt.border.name())) {
-			String borderOptionValue = cli.getOptionValue(Opt.border.name());
+		if (cli.hasOption(Opt.border.value())) {
+			String borderOptionValue = cli.getOptionValue(Opt.border.value());
 			try {
 				border = Integer.parseInt(borderOptionValue);
 			}
@@ -258,6 +279,26 @@ public class MergeToPdf {
 			if (border < 0) {
 				logger.error("Border option should be a non-negative integer but was " + borderOptionValue + ".");
 				return ExitCode.INVALID_OPTION;
+			}
+		}
+
+		Pattern fontNameFilter = null;
+
+		if (cli.hasOption(Opt.removeFont.value())) {
+			String removeFontOptionValue = cli.getOptionValue(Opt.removeFont.value());
+
+			if (!removeFontOptionValue.isEmpty()) {
+				try {
+					fontNameFilter = Pattern.compile(removeFontOptionValue);
+				}
+				catch (PatternSyntaxException e) {
+					logger.error("Remove fond option value should be a valid regular expression.");
+					return ExitCode.INVALID_OPTION;
+				}
+			}
+			else {
+				// Effectively remove all embedded fonts:
+				fontNameFilter = Pattern.compile(".*");
 			}
 		}
 
@@ -273,6 +314,15 @@ public class MergeToPdf {
 				logger.info("Adding PDF " + file + "...");
 				// Copy PDF document:
 				reader = new PdfReader(file);
+
+				if (fontNameFilter != null) {
+					for (int i = 1; i < reader.getXrefSize(); i++) {
+						unembedTTF(reader.getPdfObject(i), fontNameFilter);
+					}
+				}
+
+				// Removing unused objects will remove unused font file streams:
+				reader.removeUnusedObjects();
 			}
 			else {
 				logger.info("Adding image " + file + "...");
@@ -399,8 +449,8 @@ public class MergeToPdf {
 		String inputFile = files.get(0);
 		String outputFilePrefix;
 
-		if (cli.hasOption(Opt.prefix.name())) {
-			outputFilePrefix = cli.getOptionValue(Opt.prefix.name());
+		if (cli.hasOption(Opt.prefix.value())) {
+			outputFilePrefix = cli.getOptionValue(Opt.prefix.value());
 			if (FilenameUtils.getName(outputFilePrefix).isEmpty()) {
 				outputFilePrefix += FilenameUtils.getBaseName(inputFile);
 			}
@@ -469,5 +519,53 @@ public class MergeToPdf {
 	private static boolean isImageNotFittingBox(Image image, Rectangle box, int border) {
 		return image.getScaledWidth() > box.getWidth() - border * 2
 		            || image.getScaledHeight() > box.getHeight() - border * 2;
+	}
+
+	/**
+	 * Processes a dictionary. In case of font dictionaries, the dictionary is processed. The code was taken from
+	 * <a href="https://itextpdf.com/en/resources/examples/itext-5/unembed-font">Unembed a font</a>.
+	 */
+	private static void unembedTTF(PdfObject pdfObject, Pattern fontNameFilter) {
+		// Ignore all dictionaries that aren't font dictionaries:
+		if (pdfObject == null || !pdfObject.isDictionary()) {
+			return;
+		}
+
+		PdfDictionary dict = (PdfDictionary) pdfObject;
+
+		if (!dict.isFont()) {
+			return;
+		}
+
+		PdfName baseFont = dict.getAsName(PdfName.BASEFONT);
+		// Remove leading "/" from font name:
+		String fontName = PdfName.decodeName(baseFont.toString()).substring(1);
+
+		// Check if a subset (i.e. "ZIGEYT+ComicSansMS") was used (in which case we remove the prefix):
+		int pos = fontName.indexOf('+');
+		if (pos > 0) {
+			fontName = fontName.substring(pos + 1);
+			baseFont = new PdfName(fontName);
+		}
+
+		if (dict.getAsDict(PdfName.FONTFILE2) != null) {
+			logger.warn("Font " + fontName + " is not TTF and hence not removed");
+			return;
+		}
+
+		if (!fontNameFilter.matcher(fontName).matches()) {
+			return;
+		}
+
+		PdfDictionary fontDescriptor = dict.getAsDict(PdfName.FONTDESCRIPTOR);
+
+		if (fontDescriptor == null) {
+			return;
+		}
+
+		// Replace the font name and remove the embedded font data:
+		dict.put(PdfName.BASEFONT, baseFont);
+		fontDescriptor.put(PdfName.FONTNAME, baseFont);
+		fontDescriptor.remove(PdfName.FONTFILE2);
 	}
 }

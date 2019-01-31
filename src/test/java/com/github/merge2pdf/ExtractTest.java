@@ -33,7 +33,7 @@ public class ExtractTest {
 
 	@Test
 	public void testExtactWithNoFiles() throws Exception {
-		assertEquals(ExitCode.NOT_ENOUGH_FILES, MergeToPdf.processOptions(new String[] { "--" + Opt.extract.name() }));
+		assertEquals(ExitCode.NOT_ENOUGH_FILES, MergeToPdf.processOptions(new String[] { "--" + Opt.extract }));
 	}
 
 	@Test
@@ -52,10 +52,10 @@ public class ExtractTest {
 	public void testMergeExtract() throws Exception {
 		String pdfName = OUTPUT_DIR + "/" + "out_extract.pdf";
 
-		assertEquals(ExitCode.OK, MergeToPdf.processOptions(new String[] { "--" + Opt.merge.name(),
+		assertEquals(ExitCode.OK, MergeToPdf.processOptions(new String[] { "--" + Opt.merge,
 		        IMAGES_DIR + "/0_extact.jp2", IMAGES_DIR + "/4_fits.tiff", pdfName }));
 
-		assertEquals(ExitCode.OK, MergeToPdf.processOptions(new String[] { "--" + Opt.extract.name(), pdfName }));
+		assertEquals(ExitCode.OK, MergeToPdf.processOptions(new String[] { "--" + Opt.extract, pdfName }));
 
 		assertEquals(FileUtils.sizeOf(new File(IMAGES_DIR, "0_extact.jp2")),
 		            FileUtils.sizeOf(new File(OUTPUT_DIR, "out_extract_1.jp2")));

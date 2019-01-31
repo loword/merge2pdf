@@ -6,17 +6,14 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.ref.WeakReference;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
@@ -78,7 +75,8 @@ public class MergeTest {
 		for (File file : IMAGES_DIR.listFiles(new FilenameFilter() {
 			@Override
 			public boolean accept(File file, String name) {
-				return name.endsWith(IMAGE_FORMAT) || name.endsWith("tif") || name.endsWith("pdf");
+				return Character.isDigit(name.charAt(0))
+				            && (name.endsWith(IMAGE_FORMAT) || name.endsWith("tif") || name.endsWith("pdf"));
 			}
 		})) {
 			args.add(file.getPath());
@@ -131,6 +129,12 @@ public class MergeTest {
 	}
 
 	@Test
+	public void testMergeWithInvalidFontPattern() throws Exception {
+		assertEquals(ExitCode.INVALID_OPTION,
+		            MergeToPdf.processOptions(new String[] { "-m", "-r(arial", "in.pdf", "out.pdf" }));
+	}
+
+	@Test
 	public void testMergeDefault() {
 		runTest(args, "default");
 	}
@@ -178,12 +182,12 @@ public class MergeTest {
 
 	@Test
 	public void testMergeScalePage() {
-		// Scale to page prevails over scale to box:
-		runTest(ArrayUtils.insert(0, args, "-s", "1000x1000", "-A5"), "scale_page");
-		runTest(ArrayUtils.insert(0, args, "-s", "10000x1000", "-A5"), "scale_page");
-		runTest(ArrayUtils.insert(0, args, "-s", "100000x1000", "-A5"), "scale_page");
-		// Scale to box does not have any effect:
-		runTest(ArrayUtils.insert(0, args, "-s", "A5", "-A5"), "scale_page");
+		// Scale to page prevails over scale to box, hence scale to box has no effect:
+		runTest(ArrayUtils.insert(0, args, "-s", "1000x1000", "-A5"), "page");
+		runTest(ArrayUtils.insert(0, args, "-s", "10000x1000", "-A5"), "page");
+		runTest(ArrayUtils.insert(0, args, "-s", "100000x1000", "-A5"), "page");
+		// Scale to box does not have any effect as matches the page:
+		runTest(ArrayUtils.insert(0, args, "-s", "A5", "-A5"), "page");
 	}
 
 	@Test
@@ -234,11 +238,29 @@ public class MergeTest {
 		runTest(ArrayUtils.insert(0, args, "-A3", "--" + Opt.gravity, "NORTHwest"), "gravity_top_left");
 	}
 
+	@Test
+	public void testRemoveFonts() {
+		String[] args = new String[] { "--" + Opt.merge, "--" + Opt.removeFont.value(), "",
+		        new File(IMAGES_DIR, "font_Arial.pdf").getPath(),
+		        new File(IMAGES_DIR, "font_Arial_Times.pdf").getPath() };
+		runTest(args, "fonts_removed");
+		args[2] = "(Arial|Times.*)";
+		runTest(args, "fonts_removed");
+		args[2] = "(Arial)";
+		runTest(args, "font_Arial_removed");
+	}
+
 	private static void runTest(String[] args, String testResourceSuffix) {
 		try {
-			File pdfFile = new File(OUTPUT_DIR, "out_" + testResourceSuffix + ".pdf");
-
-			releaseDirectByteBuffer(pdfFile);
+			// Introduce a random part into the file name to avoid the filename collision. 
+			// Even though the stream which is associated with output PDF is closed, "java.io.FileNotFoundException:
+			// out.pdf (The requested operation cannot be per formed on a file with a user-mapped section open)" is thrown.
+			//
+			// @see <a href="https://stackoverflow.com/a/45850877/267197">How to unmap a file from memory mapped using FileChannel in java</a>
+			File pdfFile = new File(OUTPUT_DIR,
+			            "out_" + testResourceSuffix + "_" + StringUtils.leftPad(
+			                        Integer.toHexString(ThreadLocalRandom.current().nextInt(256)).toUpperCase(), 2, '0')
+			                        + ".pdf");
 
 			assertEquals(ExitCode.OK, MergeToPdf.processOptions(ArrayUtils.add(args, pdfFile.getPath())));
 
@@ -318,38 +340,6 @@ public class MergeTest {
 		}
 		finally {
 			IOUtils.closeQuietly(outputStream);
-		}
-	}
-
-	/**
-	 * Even though the stream which is associated with OUTPUT_PDF_NAME is closed, "java.io.FileNotFoundException:
-	 * out.pdf (The requested operation cannot be per formed on a file with a user-mapped section open)" is thrown.
-	 * 
-	 * @see <a href="https://stackoverflow.com/a/45850877/267197">How to unmap a file from memory mapped using
-	 *      FileChannel in java</a>
-	 */
-	private static void releaseDirectByteBuffer(File outputFile) throws IOException {
-		if (!outputFile.exists()) {
-			return;
-		}
-
-		FileInputStream os = new FileInputStream(outputFile);
-		MappedByteBuffer buffer = os.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, 1);
-		os.close();
-		// Below line of code does not help:
-		//((sun.nio.ch.DirectBuffer) buffer).cleaner().clean();
-
-		WeakReference<MappedByteBuffer> bufferWeakRef = new WeakReference<MappedByteBuffer>(buffer);
-		buffer = null;
-
-		final long startTime = System.currentTimeMillis();
-		while (null != bufferWeakRef.get()) {
-			if (System.currentTimeMillis() - startTime > 1000) {
-				// Give up and home for the best:
-				return;
-			}
-			System.gc();
-			Thread.yield();
 		}
 	}
 
