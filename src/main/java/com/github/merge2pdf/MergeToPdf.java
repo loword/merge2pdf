@@ -1,11 +1,9 @@
 package com.github.merge2pdf;
 
-import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.RandomAccessFile;
+import java.io.*;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 import java.util.regex.Pattern;
@@ -18,14 +16,7 @@ import com.itextpdf.text.PageSize;
 import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.io.RandomAccessSource;
 import com.itextpdf.text.io.RandomAccessSourceFactory;
-import com.itextpdf.text.pdf.PRStream;
-import com.itextpdf.text.pdf.PdfDictionary;
-import com.itextpdf.text.pdf.PdfName;
-import com.itextpdf.text.pdf.PdfObject;
-import com.itextpdf.text.pdf.PdfReader;
-import com.itextpdf.text.pdf.PdfSmartCopy;
-import com.itextpdf.text.pdf.PdfWriter;
-import com.itextpdf.text.pdf.RandomAccessFileOrArray;
+import com.itextpdf.text.pdf.*;
 import com.itextpdf.text.pdf.codec.TiffImage;
 import com.itextpdf.text.pdf.parser.PdfImageObject;
 
@@ -35,9 +26,12 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import com.github.merge2pdf.FindPdfs;
 
 /**
  * Helper class that creates PDF from given image(s) (JPEG, PNG, ...) or PDFs.
@@ -57,15 +51,15 @@ public class MergeToPdf {
 	            + "/merge2pdf/pom.properties";
 
 	enum Opt {
-		merge, extract, dpi, A, gravity, scale, border, removeFont("remove-font"), prefix, version, help;
+		based, from, to, merge, extract, dpi, A, gravity, scale, border, removeFont("remove-font"), prefix, version, help;
 
 		private final String value;
 
-		private Opt() {
+		Opt() {
 			this.value = name();
 		}
 
-		private Opt(String value) {
+		Opt(String value) {
 			this.value = value;
 		}
 
@@ -80,7 +74,7 @@ public class MergeToPdf {
 
 		private final String alias;
 
-		private Gravity(String alias) {
+		Gravity(String alias) {
 			this.alias = alias;
 		}
 
@@ -93,9 +87,9 @@ public class MergeToPdf {
 		OK(0), VERSION(1), HELP(2), INVALID_OPTION(10), MISSING_REQUIRED_OPTION(11), ILLEGAL_OPTION_COMBINATION(
 		            12), NOT_ENOUGH_FILES(13);
 
-		private int exitCode;
+		private final int exitCode;
 
-		private ExitCode(int exitCode) {
+		ExitCode(int exitCode) {
 			this.exitCode = exitCode;
 		}
 
@@ -114,7 +108,9 @@ public class MergeToPdf {
 	 */
 	static ExitCode processOptions(String[] args) throws DocumentException, IOException {
 		Options options = new Options();
-
+		options.addOption("ba", Opt.based.value(), true, "Merge files with a folder as reference");
+		options.addOption("f", Opt.from.value(), false, "get files from source folder");
+		options.addOption("t", Opt.to.value(), true, "Merge files to goal folder");
 		options.addOption("m", Opt.merge.value(), false, "Merge given input files into destination PDF");
 		options.addOption("e", Opt.extract.value(), false, "Extact images from given file");
 		options.addOption("d", Opt.dpi.value(), false, "Respect image DPI when scaling up/down");
@@ -142,7 +138,8 @@ public class MergeToPdf {
 		}
 
 		if (cli.hasOption(Opt.version.value())) {
-			try (InputStream pomStream = MergeToPdf.class.getClassLoader().getSystemClassLoader()
+			try (//InputStream pomStream = MergeToPdf.class.getClassLoader().getSystemClassLoader()
+				 InputStream pomStream = Thread.currentThread().getContextClassLoader()
 			            .getResourceAsStream(POM_RESOURCE_NAME)) {
 				if (pomStream == null) {
 					System.out.println("Version: unknown");
@@ -159,8 +156,9 @@ public class MergeToPdf {
 
 		boolean hasMergeOption = cli.hasOption(Opt.merge.value());
 		boolean hasExtractOption = cli.hasOption(Opt.extract.value());
+		boolean hasFrom = cli.hasOption(Opt.from.value());
 
-		if (cli.hasOption(Opt.help.value()) || !(hasMergeOption || hasExtractOption)) {
+		if (cli.hasOption(Opt.help.value()) || !(hasFrom || hasMergeOption || hasExtractOption)) {
 			HelpFormatter helpFormatter = new HelpFormatter();
 			helpFormatter.setSyntaxPrefix("Usage:");
 			helpFormatter.setOptionComparator(null);
@@ -168,11 +166,27 @@ public class MergeToPdf {
 			            + Opt.dpi.value() + "|--" + Opt.scale.value() + " dim|-" + Opt.A.value() + "num|--"
 			            + Opt.border.value() + " num|--" + Opt.removeFont.value()
 			            + " pattern] one.pdf [two.jpg three.png ...] out.pdf" + helpFormatter.getNewLine()
+						+ "merge2pdf --" + Opt.based.value() + " [主检目录]" + helpFormatter.getNewLine()
+						+ "merge2pdf --" + Opt.from.value() + " [检验 心电图 超声 肺功能 胃肠镜]" + helpFormatter.getNewLine()
+						+ "merge2pdf --" + Opt.to.value() + " [体检目录]" + helpFormatter.getNewLine()
 			            + "merge2pdf --" + Opt.extract.value() + " [--" + Opt.prefix.value() + " dir/prefix] in.pdf"
 			            + helpFormatter.getNewLine() + "merge2pdf --" + Opt.version.value() + helpFormatter.getNewLine()
 			            + "merge2pdf --" + Opt.help.value() + helpFormatter.getNewLine(), null, options, null, false);
 
 			return ExitCode.HELP;
+		}
+		if (cli.hasOption(Opt.based.value())) {
+			if (!hasFrom) {
+				logger.error("Both  \"" + Opt.from.value() + "\" and \"" + Opt.based.value()
+						+ "\" options should be provided.");
+				return ExitCode.ILLEGAL_OPTION_COMBINATION;
+			}
+			if (hasMergeOption) {
+				logger.error("Either \"" + Opt.merge.value() + "\" or \"" + Opt.based.value()
+						+ "\" options should be provided.");
+				return ExitCode.ILLEGAL_OPTION_COMBINATION;
+			}
+			return compareFilenames(cli);
 		}
 
 		if (hasMergeOption) {
@@ -181,15 +195,75 @@ public class MergeToPdf {
 				            + "\" options should be provided.");
 				return ExitCode.ILLEGAL_OPTION_COMBINATION;
 			}
-
-			return merge(cli);
+			List<String> list = new ArrayList<>();
+			return merge(cli,list);
 		}
+
 
 		return extract(cli);
 	}
 
-	private static ExitCode merge(CommandLine cli) throws DocumentException, IOException {
-		List<String> files = cli.getArgList();
+	/**
+	 * 2020.07.09
+	 * 比较源文件及目标文件夹下文件名是否一致
+	 * add by luohj
+	 * @param cli 传入参数
+	 * @return 返回成功失败标志
+	 */
+	public static ExitCode compareFilenames(CommandLine cli){
+		String MRN,subMRN;
+		List<String> fromPath = cli.getArgList();
+		String basePath = cli.getOptionValue(Opt.based.value());
+		try {
+			List<File> baseFiles = FindPdfs.findToPaths(basePath);
+			//目标文件夹
+			for(File f : baseFiles) {
+				List<String> compareFiles = new ArrayList<>();
+				String goalFileName = f.getName();
+				MRN = goalFileName.substring(0,8);
+				compareFiles.add(f.toString());
+
+				//去除文件同源文件夹下目录比较
+				for (String folder : fromPath) {
+					List<File> fromFiles = FindPdfs.findFromPaths(folder);
+					for(File subf : fromFiles) {
+						String subfileName = subf.getName();
+						subMRN = subfileName.substring(0,8);
+						if(MRN.equals(subMRN)) {
+							compareFiles.add(subf.toString());
+						}
+					}
+				}
+				boolean hasTo = cli.hasOption(Opt.to.value());
+				String separator = System.getProperty("file.separator");
+				if(hasTo) {
+					Date now = new Date();
+					SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+					String goalPath = cli.getOptionValue(Opt.to.value());
+					compareFiles.add(basePath + separator + "封面未删.pdf");
+					compareFiles.add(goalPath + separator + dateFormat.format(now) + separator + f.getName()); //拼接目标文件
+				} else {
+					compareFiles.add(basePath + separator + "封面未删.pdf");
+					compareFiles.add(f.toString().replace("主检","体检"));
+				}
+
+				merge(cli,compareFiles);
+			}
+		} catch (IOException | DocumentException e) {
+			e.printStackTrace();
+			logger.error(e.getMessage());
+			return ExitCode.INVALID_OPTION;
+		}
+		return ExitCode.OK;
+	}
+	private static ExitCode merge(CommandLine cli,List<String> compareFiles) throws DocumentException, IOException {
+		List<String> files;
+		if (compareFiles != null && !compareFiles.isEmpty()) {
+			files = compareFiles;
+		} else {
+			files = cli.getArgList();
+		}
+
 
 		if (files.size() < 2) {
 			logger.error("At least two files are required.");
@@ -303,13 +377,31 @@ public class MergeToPdf {
 		}
 
 		Document mergedDocument = new Document();
-		FileOutputStream os = new FileOutputStream(files.get(files.size() - 1));
+		SplitPdfs split = new SplitPdfs();
+		String outFile = files.get(files.size()-1);
+		//FileOutputStream os = new FileOutputStream(files.get(files.size()-1));
+		FileOutputStream os = FileUtils.openOutputStream(new File(outFile));
 		PdfSmartCopy pdfCopyWriter = new PdfSmartCopy(mergedDocument, os);
 		mergedDocument.open();
 
-		for (String file : files.subList(0, files.size() - 1)) {
-			PdfReader reader;
+		//去除尾部封面
+		PdfReader inputPDF  = new PdfReader(files.get(0));
+		logger.info("Adding PDF " + files.get(0) + "...");
+		List<Integer> list=new ArrayList<>();
+		int start = 1;
+		int end = inputPDF.getNumberOfPages();
+		while (start < end) {   //删除最后一页
+			list.add(start);
+			start++;
+		}
+		pdfCopyWriter.addDocument(inputPDF,list);
+		inputPDF.close();
 
+		//for (String file : files.subList(0, files.size()-1)) {
+		//去头去尾
+		for (int a = 1 ; a < files.size()-1; a++) {
+			PdfReader reader;
+			String file = files.get(a);
 			if (file.toLowerCase().endsWith(".pdf")) {
 				logger.info("Adding PDF " + file + "...");
 				// Copy PDF document:
@@ -334,7 +426,7 @@ public class MergeToPdf {
 
 				imageDocument.open();
 
-				List<Image> images = new ArrayList<Image>();
+				List<Image> images = new ArrayList<>();
 
 				if (file.toLowerCase().endsWith(".tiff") || file.toLowerCase().endsWith(".tif")) {
 					// Read all pages from TIFF image:
